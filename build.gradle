@@ -43,6 +43,7 @@ dependencies {
     testCompile 'org.koin:koin-test:1.0.1'
     compile "org.jetbrains.kotlin:kotlin-reflect:1.2.71"
     compile "io.ktor:ktor-gson:$ktor_version"
+    compile 'com.github.jasync-sql:jasync-mysql:0.8.41'
 
 }
 

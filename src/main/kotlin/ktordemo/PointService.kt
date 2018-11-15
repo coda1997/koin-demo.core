@@ -1,25 +1,42 @@
 package ktordemo
 
-interface PointService{
-    fun getPointsByTime(time:Long):List<Point>
+interface PointService {
+    fun getPointsByTime(time: Long): List<Point>
 
-    fun updatePointById(id: Int, point: Point):Boolean
+    fun updatePointById(id: Int, point: Point): Boolean
 
-    fun deletePointById(id: Int):Boolean
+    fun deletePointById(id: Int): Boolean
 
-    fun addPoint(point: Point):Boolean
+    fun addPoint(point: Point): Boolean
 
 }
+
 val pointServiceImpl = PointServiceImpl()
-class PointServiceImpl :PointService {
+
+class PointServiceImpl : PointService {
 
     override fun getPointsByTime(time: Long): List<Point> {
-
-        return listOf()
+        connection.connect().get()
+        val future = connection.sendPreparedStatement("select * from point where time >= $time")
+        val queryRes = future.get()
+        val list = queryRes.rows?.map {
+            Point(it[0]!! as Int)
+        }
+        connection.disconnect().get()
+        return list?: emptyList()
     }
 
     override fun updatePointById(id: Int, point: Point): Boolean {
-        return false
+        connection.connect().get()
+        val future = connection.sendPreparedStatement("select * from point where id = $id")
+        val query = future.get()
+        return if ( query.rows?.size?:0==0){
+            connection.disconnect().get()
+            false
+        }else{
+            val update = connection.sendPreparedStatement("update on point where id = $id")
+            true
+        }
     }
 
     override fun deletePointById(id: Int): Boolean {
