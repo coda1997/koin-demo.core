@@ -21,7 +21,12 @@ data class Building(val name: String, val floors: List<Floor>? = null)
 
 data class Floor(val name: String, val content: String)
 
-data class Point(val id: Int)
+data class Point(val id: Long, val latitude: Long, val longitude: Long, val floor: Int, val buildingName: String="shilintong", val wifiScanRes: WifiScanRes?=null, val blueToothScanRes: BlueToothScanRes?=null)
+
+class BlueToothScanRes // not used yet
+
+class WifiScanRes
+
 
 fun Application.module() {
     install(StatusPages){
