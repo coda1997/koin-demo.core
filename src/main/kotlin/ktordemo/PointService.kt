@@ -20,7 +20,7 @@ class PointServiceImpl : PointService {
         val future = connection.sendPreparedStatement("select * from point where time >= $time")
         val queryRes = future.get()
         val list = queryRes.rows?.map {
-            Point(it[0]!! as Int,,,, "shilintong", null, null)
+            Point(it[0]!! as Long, latitude = 0,longitude = 0,floor = 0,buildingName = "shilintong")
         }
         connection.disconnect().get()
         return list?: emptyList()

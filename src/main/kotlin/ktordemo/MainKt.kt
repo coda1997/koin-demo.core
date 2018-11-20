@@ -21,7 +21,7 @@ data class Building(val name: String, val floors: List<Floor>? = null)
 
 data class Floor(val name: String, val content: String)
 
-data class Point(val id: Long, val latitude: Long, val longitude: Long, val floor: Int, val buildingName: String="shilintong", val wifiScanRes: WifiScanRes?=null, val blueToothScanRes: BlueToothScanRes?=null)
+data class Point(val id: Long, val latitude: Long, val longitude: Long, val floor: Int, val buildingName: String="shilintong", val wifiScanRes: List<WifiScanRes> = emptyList(), val blueToothScanRes: List<BlueToothScanRes> = emptyList())
 
 class BlueToothScanRes // not used yet
 
