@@ -30,7 +30,7 @@ data class Point(val id: Long, val latitude: Double, val longitude: Double, val 
 
 class BlueToothScanRes // not used yet
 
-data class WifiScanRes(val id:Int=0,val ctime:String, val ress:List<OriginalRes>,val pid:Int)
+data class WifiScanRes(val id:Int=0,val ctime:String, val ress:List<OriginalRes>,var pid:Long)
 
 data class OriginalRes(val id:Int=0,val ssid:String, val level:Int,val sid:Int)
 
@@ -39,13 +39,12 @@ fun Application.module() {
     install(StatusPages){
         exception<Throwable>{
             cause->
-            call.respond(Data(HttpStatusCode.InternalServerError.value,cause.localizedMessage))
+            call.respond(Data(HttpStatusCode.InternalServerError.value,cause.message?:""))
         }
     }
 
     install(ContentNegotiation) {
         gson {
-            setDateFormat(DateFormat.LONG)
             setPrettyPrinting()
         }
     }
@@ -98,9 +97,9 @@ fun Routing.root() {
             val res=pointServiceImpl.getPointsByTime(call.parameters["time"]?.toLong()?:0)
             call.respond(Data(data = RespondBody(points = res)))
         }
-        post {
-            val id = call.parameters["time"]?.toInt()?:-1
-            if (id==-1){
+        patch {
+            val id = call.parameters["time"]?.toLong()?:-1L
+            if (id==-1L){
                 call.respond(Data(code = HttpStatusCode.NotFound.value,msg = "point id cannot be -1"))
             }else{
                 val point = call.receive<Point>()// receive only once
@@ -114,8 +113,8 @@ fun Routing.root() {
         }
 
         delete {
-            val id = call.parameters["time"]?.toInt()?:-1
-            if (id==-1){
+            val id = call.parameters["time"]?.toLong()?:-1L
+            if (id==-1L){
                 call.respond(Data(code = HttpStatusCode.NotFound.value,msg = "point id cannot be -1"))
             }else{
                 if (pointServiceImpl.deletePointById(id)){

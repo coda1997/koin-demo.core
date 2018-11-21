@@ -1,0 +1,8 @@
+{
+    "port": 8080,
+    "userName":"hipe_root",
+    "password":"hipe_root",
+    "dataBasePort":3306,
+    "dataBaseIp":"120.78.190.36",
+    "dataBaseName":"hipe"
+}
