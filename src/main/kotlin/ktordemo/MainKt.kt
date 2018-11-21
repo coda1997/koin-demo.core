@@ -1,5 +1,9 @@
 package ktordemo
 
+import com.github.jasync.sql.db.*
+import com.github.jasync.sql.db.mysql.pool.*
+import com.github.jasync.sql.db.pool.*
+import com.google.gson.*
 import io.ktor.application.*
 import io.ktor.features.*
 import io.ktor.gson.*
@@ -11,6 +15,7 @@ import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import java.io.*
 import java.text.*
+import java.util.concurrent.*
 
 
 data class Data(val code: Int = 200, val msg: String = "OK", val data: RespondBody? = null)
@@ -21,11 +26,13 @@ data class Building(val name: String, val floors: List<Floor>? = null)
 
 data class Floor(val name: String, val content: String)
 
-data class Point(val id: Long, val latitude: Long, val longitude: Long, val floor: Int, val buildingName: String="shilintong", val wifiScanRes: List<WifiScanRes> = emptyList(), val blueToothScanRes: List<BlueToothScanRes> = emptyList())
+data class Point(val id: Long, val latitude: Double, val longitude: Double, val floor: Int, val buildingName: String="shilintong", val wifiScanRes: List<WifiScanRes> = emptyList(), val blueToothScanRes: List<BlueToothScanRes> = emptyList())
 
 class BlueToothScanRes // not used yet
 
-class WifiScanRes
+data class WifiScanRes(val id:Int=0,val ctime:String, val ress:List<OriginalRes>,val pid:Int)
+
+data class OriginalRes(val id:Int=0,val ssid:String, val level:Int,val sid:Int)
 
 
 fun Application.module() {
@@ -46,9 +53,29 @@ fun Application.module() {
         root()
     }
 }
-
+lateinit var  connection: Connection
 fun main(args: Array<String>) {
-    embeddedServer(Netty, port = 8080, module = Application::module).start(wait = true)
+    val file = FileReader(File("config.json")).readText()
+    val config = Gson().fromJson<Config>(file,Config::class.java)
+    connection= ConnectionPool(
+            MySQLConnectionFactory(
+                    Configuration(
+                            username = config.userName,
+                            password = config.password,
+                            host = config.dataBaseIp,
+                            port = config.dataBasePort,
+                            database = config.dataBaseName
+                    )
+            ), PoolConfiguration(
+            100,
+            TimeUnit.MINUTES.toMillis(15),
+            10_000,
+            TimeUnit.MINUTES.toMillis(30)
+    )
+    )
+
+    connection.connect().get()
+    embeddedServer(Netty, port = config.port, module = Application::module).start(wait = true)
 }
 
 fun Routing.root() {
