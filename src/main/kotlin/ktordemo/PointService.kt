@@ -1,6 +1,5 @@
 package ktordemo
 
-import com.github.jasync.sql.db.*
 
 interface PointService {
     fun getPointsByTime(time: Long): List<Point>
@@ -56,16 +55,16 @@ class PointServiceImpl : PointService {
             it.sendPreparedStatement("select LAST_INSERT_ID()")
         }.get()
 
-        val id = result.rows!![0] as Int
+        val id = result.rows!![0][0] as Int
         wifiScanRes.ress.forEach {
             addOriginalScanRes(it.ssid,it.level,id)
         }
     }
 
-    private fun deleteOrigianlScanRes(forginKey:Int){
-        val future = connection.sendPreparedStatement("delete from original_res where s_id = $forginKey")
-        future.get()
-    }
+//    private fun deleteOrigianlScanRes(forginKey:Int){
+//        val future = connection.sendPreparedStatement("delete from original_res where s_id = $forginKey")
+//        future.get()
+//    }
 
     private fun addOriginalScanRes(ssid:String, level:Int,forginKey:Int){
         val future = connection.sendPreparedStatement("insert into original_res (ssid,level,s_id) values ('$ssid', $level, $forginKey)")
