@@ -2,7 +2,7 @@ package ktordemo
 
 
 interface PointService {
-    fun getPointsByTime(time: Long): List<Point>
+    fun getPointsByTime(time: Long,floor: Int): List<Point>
 
     fun updatePointById(id: Int, point: Point): Boolean
 
@@ -16,8 +16,8 @@ val pointServiceImpl = PointServiceImpl()
 
 class PointServiceImpl : PointService {
 
-    override fun getPointsByTime(time: Long): List<Point> {
-        val future = connection.sendPreparedStatement("select * from point where pid_time >= $time")
+    override fun getPointsByTime(time: Long, floor:Int): List<Point> {
+        val future = connection.sendPreparedStatement("select * from point where pid_time >= $time and floor = $floor")
         val queryRes = future.get()
         val list = queryRes.rows?.map {
             Point(it[0] as Long, latitude = it[1] as Double,longitude = it[2] as Double,floor = it[3] as Int)

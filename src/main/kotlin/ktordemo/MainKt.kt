@@ -95,7 +95,8 @@ fun Routing.root() {
     }
     route("/point/{time}"){
         get{
-            val res=pointServiceImpl.getPointsByTime(call.parameters["time"]?.toLong()?:0)
+            val floor = call.request.queryParameters["floor"]?.toInt()?:0
+            val res=pointServiceImpl.getPointsByTime(call.parameters["time"]?.toLong()?:0,floor)
             call.respond(Data(data = RespondBody(points = res)))
         }
         post {
@@ -129,7 +130,8 @@ fun Routing.root() {
     }
     route("/point"){
         get{
-            call.respond(Data(data = RespondBody(points = pointServiceImpl.getPointsByTime(0))))
+            val floor = call.request.queryParameters["floor"]?.toInt()?:0
+            call.respond(Data(data = RespondBody(points = pointServiceImpl.getPointsByTime(0,floor))))
         }
         post {
             val point = call.receive<Point>()
