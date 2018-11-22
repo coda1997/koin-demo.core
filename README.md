@@ -32,9 +32,9 @@
 
 | url             | method | parameters                 | comment                                                  |
 | --------------- | ------ | -------------------------- | -------------------------------------------------------- |
-| /point          | get    | -                          | 获取所有点                                               |
+| /point          | get    | floor : Int                          | 获取所有点                                               |
 |                 | post   | point : Point              | 添加一个点(json格式的对象)                               |
-| /point/{`time`} | get    | time : Long                | 获取时间为`time`之后的所有的点（包括在`time`之后更新的） |
+| /point/{`time`} | get    | time : Long, floor : Int                | 获取时间为`time`之后的所有的点（包括在`time`之后更新的） |
 |                 | patch   | time : Long, point : Point | 更新时间为`time`的点数据(更新后点的`time`为新的时间)     |
 |                 | delete | time : Long                | 删除时间为`time`的点                                     |
 | /building       | get    | -                          | 返回所有大楼的信息                                       |
