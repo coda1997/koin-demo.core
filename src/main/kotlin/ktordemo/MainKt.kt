@@ -45,7 +45,7 @@ fun Application.module() {
 
     install(ContentNegotiation) {
         gson {
-            setPrettyPrinting()
+//            setPrettyPrinting()
         }
     }
     routing {
@@ -67,9 +67,9 @@ fun main(args: Array<String>) {
                     )
             ), PoolConfiguration(
             100,
-            TimeUnit.MINUTES.toMillis(15),
+            TimeUnit.MINUTES.toMillis(1500),
             10_000,
-            TimeUnit.MINUTES.toMillis(30)
+            TimeUnit.MINUTES.toMillis(3000)
     )
     )
 
@@ -94,7 +94,7 @@ fun Routing.root() {
     }
     route("/point/{time}"){
         get{
-            val floor = call.request.queryParameters["floor"]?.toInt()?:0
+            val floor = call.request.queryParameters["floor"]?.toInt()?:1
             val res=pointServiceImpl.getPointsByTime(call.parameters["time"]?.toLong()?:0,floor)
             call.respond(Data(data = RespondBody(points = res)))
         }
@@ -129,7 +129,7 @@ fun Routing.root() {
     }
     route("/point"){
         get{
-            val floor = call.request.queryParameters["floor"]?.toInt()?:0
+            val floor = call.request.queryParameters["floor"]?.toInt()?:1
             call.respond(Data(data = RespondBody(points = pointServiceImpl.getPointsByTime(0,floor))))
         }
         post {
