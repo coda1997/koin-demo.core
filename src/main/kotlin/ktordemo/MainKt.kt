@@ -74,7 +74,9 @@ fun main(args: Array<String>) {
     )
 
     connection.connect().get()
-    embeddedServer(Netty, port = config.port, module = Application::module).start(wait = true)
+    embeddedServer(Netty, port = config.port, module = Application::module, configure = {
+        responseWriteTimeoutSeconds=120
+    }).start(wait = true)
 }
 
 fun Routing.root() {
