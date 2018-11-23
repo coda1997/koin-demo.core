@@ -20,7 +20,7 @@ import java.util.concurrent.*
 
 data class Data(val code: Int = 200, val msg: String = "OK", val data: RespondBody? = null)
 
-data class RespondBody(val points: List<Point>?=null, val building: Building? = null,val buildings:List<Building>?=null)
+data class RespondBody(val points: List<Point>?=null, val building: Building? = null,val buildings:List<Building>?=null, val delete:List<Point>?=null)
 
 data class Building(val name: String, val floors: List<Floor>? = null)
 
