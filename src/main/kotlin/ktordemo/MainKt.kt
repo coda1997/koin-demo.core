@@ -48,6 +48,9 @@ fun Application.module() {
 //            setPrettyPrinting()
         }
     }
+    install(Compression){
+        gzip()
+    }
     routing {
         root()
     }
