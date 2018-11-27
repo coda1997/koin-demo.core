@@ -14,7 +14,6 @@ import io.ktor.routing.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import java.io.*
-import java.text.*
 import java.util.concurrent.*
 
 
@@ -30,7 +29,7 @@ data class Point(val id: Long, val latitude: Double, val longitude: Double, val 
 
 class BlueToothScanRes // not used yet
 
-data class WifiScanRes(var id:Int=0,val ctime:String, val ress:List<OriginalRes>,var pid:Long)
+data class WifiScanRes(var id:Int=0,val ctime:String, var ress:List<OriginalRes>,var pid:Long)
 
 data class OriginalRes(val id:Int=0,val ssid:String, val level:Int,val sid:Int)
 

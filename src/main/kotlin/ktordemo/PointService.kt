@@ -1,11 +1,10 @@
 package ktordemo
 
-import com.github.jasync.sql.db.*
 import java.lang.StringBuilder
 
 
 interface PointService {
-    fun getPointsByTime(time: Long,floor: Int): List<Point>
+    fun getPointsByTime(time: Long, floor: Int): List<Point>
 
     fun updatePointById(id: Long, point: Point): Boolean
 
@@ -19,7 +18,7 @@ val pointServiceImpl = PointServiceImpl()
 
 class PointServiceImpl : PointService {
 
-    override fun getPointsByTime(time: Long, floor:Int): List<Point> {
+    override fun getPointsByTime(time: Long, floor: Int): List<Point> {
         val future = connection.sendPreparedStatement("select * from point where pid_time >= $time and floor = $floor")
         val queryRes = future.get()
         val list = queryRes.rows?.map {
@@ -27,6 +26,28 @@ class PointServiceImpl : PointService {
             Point(id, latitude = it[1] as Double, longitude = it[2] as Double, floor = it[3] as Int, wifiScanRes = getWifiScanRes(id))
         }
         return list ?: emptyList()
+    }
+
+    private fun getWifiScanRes(pid: Long): List<WifiScanRes> {
+
+        val future = connection.sendPreparedStatement("select * from wifi_scan_res where pid = $pid")
+        val scanRess = future.get().rows ?: return emptyList()
+        val result = mutableListOf<WifiScanRes>()
+
+        val originalRess = mutableListOf<OriginalRes>()
+        connection.sendPreparedStatement("select * from original_res where s_id in (select id from wifi_scan_res where pid = $pid)")
+                .get().rows?.forEach {
+            originalRess.add(OriginalRes(it[0] as Int, it[1] as String, it[2] as Int, it[3] as Int))
+        }
+        scanRess.forEach {
+            val id = it[0] as Int
+            result.add(WifiScanRes(id, it[2] as String, emptyList(), it[1] as Long))
+        }
+        val ss = originalRess.groupBy { it.sid }
+        result.forEach {
+            ss[it.id]?.apply { it.ress=this }
+        }
+        return result
     }
 
     override fun updatePointById(id: Long, point: Point): Boolean {
@@ -41,17 +62,13 @@ class PointServiceImpl : PointService {
         deleteWifiScanRes(id)
         return true
     }
-    private fun deleteWifiScanRes(fk:Long){
-        val sids = connection.sendPreparedStatement("select id from wifi_scan_res where pid = $fk").get().rows!!
-        sids.forEach {
-            deleteOriginalRes(it[0] as Int)
-        }
-        val future = connection.sendPreparedStatement("delete from wifi_scan_res where pid = $fk")
-        future.get()
-    }
-    private fun deleteOriginalRes(id:Int){
-        val futrue = connection.sendPreparedStatement("delete from original_res where s_id = $id")
-        futrue.get()
+
+    private fun deleteWifiScanRes(fk: Long) {
+        connection.inTransaction {
+            it.sendPreparedStatement("delete from original_res where s_id in (select id from wifi_scan_res where pid = $fk)").get()
+            val future = it.sendPreparedStatement("delete from wifi_scan_res where pid = $fk")
+            future
+        }.get()
     }
 
     override fun addPoint(point: Point): Boolean {
@@ -60,8 +77,10 @@ class PointServiceImpl : PointService {
         addWifiScanRess(point.wifiScanRes)
         return true
     }
-    private fun addWifiScanRess(ress:List<WifiScanRes>){
-        if (ress.isEmpty()){
+
+
+    private fun addWifiScanRess(ress: List<WifiScanRes>) {
+        if (ress.isEmpty()) {
             return
         }
         val result = connection.inTransaction { connection1 ->
@@ -72,10 +91,10 @@ class PointServiceImpl : PointService {
             connection1.sendPreparedStatement("select id from wifi_scan_res where pid = ${ress[0].pid}")
         }.get()
         val id = result.rows!!.map { it[0] }
-        ress.forEachIndexed { index, wifiScanRes -> wifiScanRes.id=(id[index]as Long).toInt()}
-        connection.inTransaction { c->
+        ress.forEachIndexed { index, wifiScanRes -> wifiScanRes.id = (id[index] as Long).toInt() }
+        connection.inTransaction { c ->
             val stringBuilder = StringBuilder().append("insert into original_res (ssid,level,s_id) values ")
-            ress.forEach { o->
+            ress.forEach { o ->
                 o.ress.forEach {
                     stringBuilder.append("(${it.ssid},${it.level},${o.id})")
                 }
@@ -83,50 +102,6 @@ class PointServiceImpl : PointService {
             val future = c.sendPreparedStatement(stringBuilder.toString())
             future
         }.get()
-    }
-
-
-
-//    private fun addWifiScanRes(wifiScanRes: WifiScanRes) {
-//        val result = connection.inTransaction {
-//            val future = it.sendPreparedStatement("insert into wifi_scan_res (ctime, pid) values('${wifiScanRes.ctime}', ${wifiScanRes.pid})")
-//            // val idResult = it.sendPreparedStatement()
-//            future.get()
-//            it.sendPreparedStatement("select LAST_INSERT_ID()")
-//        }.get()
-//
-//        val id = result.rows!![0][0] as Long
-//        wifiScanRes.ress.forEach {
-//            addOriginalScanRes(it.ssid, it.level, id.toInt())
-//        }
-//    }
-
-    private fun getWifiScanRes(pid: Long): List<WifiScanRes> {
-        val future = connection.sendPreparedStatement("select * from wifi_scan_res where pid = $pid")
-        val scanRess = future.get().rows?:return emptyList()
-        val result = mutableListOf<WifiScanRes>()
-        scanRess.forEach {
-            val id = it[0] as Int
-            val originalRes= getOriginalScanRes(id)
-            result.add(WifiScanRes(id,it[2] as String,originalRes,it[1] as Long ))
-        }
-        return result
-    }
-
-    private fun getOriginalScanRes(forginKey: Int): List<OriginalRes> {
-        val futre = connection.sendPreparedStatement("select * from original_res where s_id = $forginKey")
-        val res = futre.get().rows ?: return emptyList()
-        val ress = mutableListOf<OriginalRes>()
-        res.forEach {
-            ress.add(OriginalRes(id = it[0] as Int, ssid = it[1] as String, level = it[2] as Int, sid = it[3] as Int))
-        }
-        return ress
-    }
-
-    private fun addOriginalScanRes(ssid: String, level: Int, forginKey: Int) {
-        val future = connection.sendPreparedStatement("insert into original_res (ssid,level,s_id) values ('$ssid', $level, $forginKey)")
-        val query = future.get()
-        println(query.statusMessage)
     }
 
 }
