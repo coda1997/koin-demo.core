@@ -1,5 +1,8 @@
 package ktordemo
 
+import com.github.jasync.sql.db.*
+import java.lang.StringBuilder
+
 
 interface PointService {
     fun getPointsByTime(time: Long,floor: Int): List<Point>
@@ -54,30 +57,48 @@ class PointServiceImpl : PointService {
     override fun addPoint(point: Point): Boolean {
         val f = connection.sendPreparedStatement("insert into point values(${point.id},${point.latitude},${point.longitude},${point.floor})")
         f.get()
-        point.wifiScanRes.forEach {
-            it.pid=point.id
-            addWifiScanRes(it)
-        }
+        addWifiScanRess(point.wifiScanRes)
         return true
     }
-
-    private fun addWifiScanRes(wifiScanRes: WifiScanRes) {
-        val result = connection.inTransaction {
-            val future = it.sendPreparedStatement("insert into wifi_scan_res (ctime, pid) values('${wifiScanRes.ctime}', ${wifiScanRes.pid})")
-            // val idResult = it.sendPreparedStatement()
-            future.get()
-            it.sendPreparedStatement("select LAST_INSERT_ID()")
-        }.get()
-
-        val id = result.rows!![0][0] as Long
-        wifiScanRes.ress.forEach {
-            addOriginalScanRes(it.ssid, it.level, id.toInt())
+    private fun addWifiScanRess(ress:List<WifiScanRes>){
+        if (ress.isEmpty()){
+            return
         }
+        val result = connection.inTransaction { connection1 ->
+            val stringBuilder = StringBuilder().append("insert into wifi_scan_res (ctime, pid) values ")
+            ress.forEach { stringBuilder.append("('${it.ctime}',${it.pid})") }
+            val future = connection1.sendPreparedStatement(stringBuilder.toString())
+            future.get()
+            connection1.sendPreparedStatement("select id from wifi_scan_res where pid = ${ress[0].pid}")
+        }.get()
+        val id = result.rows!!.map { it[0] }
+        ress.forEachIndexed { index, wifiScanRes -> wifiScanRes.id=(id[index]as Long).toInt()}
+        connection.inTransaction { c->
+            val stringBuilder = StringBuilder().append("insert into original_res (ssid,level,s_id) values ")
+            ress.forEach { o->
+                o.ress.forEach {
+                    stringBuilder.append("(${it.ssid},${it.level},${o.id})")
+                }
+            }
+            val future = c.sendPreparedStatement(stringBuilder.toString())
+            future
+        }.get()
     }
 
-    //    private fun deleteOrigianlScanRes(forginKey:Int){
-//        val future = connection.sendPreparedStatement("delete from original_res where s_id = $forginKey")
-//        future.get()
+
+
+//    private fun addWifiScanRes(wifiScanRes: WifiScanRes) {
+//        val result = connection.inTransaction {
+//            val future = it.sendPreparedStatement("insert into wifi_scan_res (ctime, pid) values('${wifiScanRes.ctime}', ${wifiScanRes.pid})")
+//            // val idResult = it.sendPreparedStatement()
+//            future.get()
+//            it.sendPreparedStatement("select LAST_INSERT_ID()")
+//        }.get()
+//
+//        val id = result.rows!![0][0] as Long
+//        wifiScanRes.ress.forEach {
+//            addOriginalScanRes(it.ssid, it.level, id.toInt())
+//        }
 //    }
 
     private fun getWifiScanRes(pid: Long): List<WifiScanRes> {

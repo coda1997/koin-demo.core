@@ -30,7 +30,7 @@ data class Point(val id: Long, val latitude: Double, val longitude: Double, val 
 
 class BlueToothScanRes // not used yet
 
-data class WifiScanRes(val id:Int=0,val ctime:String, val ress:List<OriginalRes>,var pid:Long)
+data class WifiScanRes(var id:Int=0,val ctime:String, val ress:List<OriginalRes>,var pid:Long)
 
 data class OriginalRes(val id:Int=0,val ssid:String, val level:Int,val sid:Int)
 
