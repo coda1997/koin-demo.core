@@ -31,14 +31,14 @@ class BlueToothScanRes // not used yet
 
 data class WifiScanRes(var id:Int=0,val ctime:String, var ress:List<OriginalRes>,var pid:Long)
 
-data class OriginalRes(val id:Int=0,val ssid:String, val level:Int,val sid:Int)
+data class OriginalRes(val id:Int=0,val ssid:String, val level:Int,var sid:Int)
 
 
 fun Application.module() {
     install(StatusPages){
         exception<Throwable>{
             cause->
-            call.respond(Data(HttpStatusCode.InternalServerError.value,cause.message?:""))
+            call.respond(Data(HttpStatusCode.InternalServerError.value,cause.stackTrace.joinToString("\n")))
         }
     }
 

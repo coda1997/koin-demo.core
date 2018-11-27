@@ -45,7 +45,7 @@ class PointServiceImpl : PointService {
         }
         val ss = originalRess.groupBy { it.sid }
         result.forEach {
-            ss[it.id]?.apply { it.ress=this }
+            ss[it.id]?.apply { it.ress = this }
         }
         return result
     }
@@ -74,34 +74,31 @@ class PointServiceImpl : PointService {
     override fun addPoint(point: Point): Boolean {
         val f = connection.sendPreparedStatement("insert into point values(${point.id},${point.latitude},${point.longitude},${point.floor})")
         f.get()
-        addWifiScanRess(point.wifiScanRes)
+        addWifiScanRess(point.wifiScanRes, point.id)
         return true
     }
 
 
-    private fun addWifiScanRess(ress: List<WifiScanRes>) {
+    private fun addWifiScanRess(ress: List<WifiScanRes>, pid: Long) {
         if (ress.isEmpty()) {
             return
         }
         val result = connection.inTransaction { connection1 ->
-            val stringBuilder = StringBuilder().append("insert into wifi_scan_res (ctime, pid) values ")
-            ress.forEach { stringBuilder.append("('${it.ctime}',${it.pid})") }
-            val future = connection1.sendPreparedStatement(stringBuilder.toString())
+            val prefix = "insert into wifi_scan_res (ctime, pid) values"
+            val sql = ress.joinToString(",", prefix = prefix, postfix = ";") { "('${it.ctime}',$pid)" }
+            println(sql)
+            val future = connection1.sendPreparedStatement(sql)
             future.get()
-            connection1.sendPreparedStatement("select id from wifi_scan_res where pid = ${ress[0].pid}")
+            connection1.sendPreparedStatement("select id from wifi_scan_res where pid = $pid")
         }.get()
-        val id = result.rows!!.map { it[0] }
-        ress.forEachIndexed { index, wifiScanRes -> wifiScanRes.id = (id[index] as Long).toInt() }
-        connection.inTransaction { c ->
-            val stringBuilder = StringBuilder().append("insert into original_res (ssid,level,s_id) values ")
-            ress.forEach { o ->
-                o.ress.forEach {
-                    stringBuilder.append("(${it.ssid},${it.level},${o.id})")
-                }
-            }
-            val future = c.sendPreparedStatement(stringBuilder.toString())
-            future
-        }.get()
+        val id = result.rows!!.map { it[0] as Int }
+        ress.forEachIndexed { index, wifiScanRes ->
+            wifiScanRes.id = id[index]
+            wifiScanRes.ress.forEach { it.sid = wifiScanRes.id }
+        }
+        val prefix = "insert into original_res (ssid,level,s_id) values "
+        val sql = ress.flatMap { it.ress }.joinToString(",", prefix, ";") { "('${it.ssid}',${it.level},${it.sid})" }
+        connection.sendPreparedStatement(sql).get()
     }
 
 }
