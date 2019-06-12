@@ -1,6 +1,7 @@
 package ktordemo
 
 import java.lang.StringBuilder
+import java.util.Collections.*
 
 
 interface PointService {
@@ -39,10 +40,12 @@ class PointServiceImpl : PointService {
                 .get().rows?.forEach {
             originalRess.add(OriginalRes(it[0] as Int, it[1] as String, it[2] as Int, it[3] as Int))
         }
+
         scanRess.forEach {
             val id = it[0] as Int
             result.add(WifiScanRes(id, it[2] as String, emptyList(), it[1] as Long))
         }
+
         val ss = originalRess.groupBy { it.sid }
         result.forEach {
             ss[it.id]?.apply { it.ress = this }
@@ -64,7 +67,7 @@ class PointServiceImpl : PointService {
     }
 
     private fun deleteWifiScanRes(fk: Long) {
-        connection.inTransaction {
+        connection.inTransaction {it->
             it.sendPreparedStatement("delete from original_res where s_id in (select id from wifi_scan_res where pid = $fk)").get()
             val future = it.sendPreparedStatement("delete from wifi_scan_res where pid = $fk")
             future

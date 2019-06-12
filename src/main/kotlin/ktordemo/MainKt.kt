@@ -25,6 +25,7 @@ data class Building(val name: String, val floors: List<Floor>? = null)
 
 data class Floor(val name: String, val content: String)
 
+// 缺少设备id字段，后续需要添加
 data class Point(val id: Long, val latitude: Double, val longitude: Double, val floor: Int, val buildingName: String="shilintong", val wifiScanRes: List<WifiScanRes> = emptyList(), val blueToothScanRes: List<BlueToothScanRes> = emptyList())
 
 class BlueToothScanRes // not used yet
